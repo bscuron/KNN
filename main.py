@@ -1,8 +1,14 @@
 import pygame
+import os
 from PIL import Image, ImageOps, ImageEnhance
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score
+from sklearn.utils import shuffle
 import sys
 import numpy as np
-from time import sleep, time_ns
+from time import sleep, time_ns, time # TODO: remove these. just here for debugging
 import pandas as pd
 
 # window settings
@@ -11,28 +17,84 @@ screen = pygame.display.set_mode([WIDTH, HEIGHT])
 
 # canvas settings
 coords = [] # (x, y) coordinates of user drawing
-PEN_WIDTH = 5
+PEN_WIDTH = 30
 COLOR_BLACK = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
 
 # image filter settings
-CONTRAST_FACTOR = 10 # the factor to increase the 28x28 representation of the screen's contrast
+CONTRAST_FACTOR = 1.1 # the factor to increase the 28x28 representation of the screen's contrast
+
+# model settings
+MIN_K = 1
+MAX_K = 5
+K_RANGE = range(MIN_K, MAX_K + 1)
+CROSS_VALIDATION_FOLDS = 3
 
 def main():
-    knn_model = getModel()
+    knn = getModel()
     pygame.init()
     while True:
         screen.fill(COLOR_BLACK)
         handleEvents()
         drawCoords()
         pixels = getPixels()
+        label = knn.predict(pixels)[0]
+        probablities = knn.predict_proba(pixels)[0]
+        for i, p in enumerate(probablities):
+            print(f'{i} => {p:.2f}')
+        print(f'Label: {label}')
         pygame.display.flip()
 
 # train the KNN classification model using the MNIST dataset
 def getModel():
+    # load dataset split into training/validation and testing
     print('Loading dataset...')
     X_train, X_test, y_train, y_test = loadData()
+    print(f'X_train shape: {X_train.shape}')
     print('Loaded dataset')
+
+    # normalize features
+    print('Normalizing features...')
+    normalizer = StandardScaler()
+    X_train = normalizer.fit_transform(X_train)
+    X_test = normalizer.transform(X_test)
+    print('Normalized features')
+
+    # use cross-validation to select the optimal hyperparameter 'k'
+    print('Finding optimal hyperparameter...')
+    # k = getK(X_train, y_train)
+    k = 10 
+    print('Found optimal hyperparameter')
+
+    # fit the data to the model with the optimal hyperparameter 'k'
+    print('Fitting data...')
+    knn = KNeighborsClassifier(n_neighbors=k)
+    knn.fit(X_train, y_train)
+    print('Fit data')
+
+    # evaluate the model on the testing set
+    # print('Computing statistics...')
+    # y_test_pred = knn.predict(X_test)
+    # acc = accuracy_score(y_test, y_test_pred)
+    # f1 = f1_score(y_test, y_test_pred, average=None)
+    # recall = recall_score(y_test, y_test_pred, average=None)
+    # precision = precision_score(y_test, y_test_pred, average=None)
+    # print(f'Accuracy: {acc}')
+    # print(f'Recall: {recall}')
+    # print(f'Precision: {precision}')
+    # print(f'F1 score: {f1}')
+    return knn
+
+def getK(features, labels):
+    features = features[:int(len(features / 10000))]
+    labels = labels[:int(len(labels / 10000))]
+    param_grid = dict(n_neighbors=K_RANGE)
+    knn = KNeighborsClassifier(n_neighbors=1)
+    grid = GridSearchCV(knn, param_grid, cv=CROSS_VALIDATION_FOLDS, scoring='accuracy')
+    grid.fit(features, labels)
+    print(grid.best_score_)
+    print(grid.best_params_)
+    return grid.best_params_['n_neighbors']
 
 # load MNIST dataset into pandas dataframes (train, test). Use cached pkl format if available.
 def loadData():
@@ -44,6 +106,8 @@ def loadData():
         testingData = pd.read_csv('./test.csv')
         trainingData.to_pickle('./train_cached.pkl')
         testingData.to_pickle('./test_cached.pkl')
+    # trainingData = shuffle(trainingData)
+    # testingData = shuffle(testingData)
     X_train = trainingData.drop('label', axis='columns').values
     y_train = trainingData['label'].values
     X_test = testingData.drop('label', axis='columns').values
@@ -81,8 +145,9 @@ def getPixels():
     img = ImageOps.grayscale(img)
     img.thumbnail((28, 28), Image.ANTIALIAS)
     img = ImageEnhance.Contrast(img).enhance(CONTRAST_FACTOR)
-    # img.save(f'./images/screen_{time_ns()}.jpg')
+    img.save(f'./images/screen_{time_ns()}.png')
     pixels = np.array(list(img.getdata()))
+    pixels = pixels.reshape(1, -1)
     return pixels
 
 if __name__ == '__main__':
