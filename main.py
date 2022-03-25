@@ -1,9 +1,8 @@
 import pygame
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageEnhance
 import sys
 import numpy as np
-import COLOR
-from time import sleep
+from time import sleep, time_ns
 import pandas as pd
 
 # window settings
@@ -16,15 +15,17 @@ PEN_WIDTH = 5
 COLOR_BLACK = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
 
+# image filter settings
+CONTRAST_FACTOR = 10 # the factor to increase the 28x28 representation of the screen's contrast
+
 def main():
     knn_model = getModel()
     pygame.init()
     while True:
-        screen.fill(COLOR_WHITE)
+        screen.fill(COLOR_BLACK)
         handleEvents()
         drawCoords()
         pixels = getPixels()
-        print(pixels.shape)
         pygame.display.flip()
 
 # train the KNN classification model using the MNIST dataset
@@ -53,7 +54,7 @@ def loadData():
 # draw a line between adjacent points/coordinates in the `coords` list
 def drawCoords():
     if len(coords) >= 2:
-        pygame.draw.lines(surface=screen, color=COLOR_BLACK, closed=False, points=coords, width=PEN_WIDTH)
+        pygame.draw.lines(surface=screen, color=COLOR_WHITE, closed=False, points=coords, width=PEN_WIDTH)
 
 # handle the different pygame events (mouse events, keyboard events, quit event)
 def handleEvents():
@@ -73,14 +74,16 @@ def handleEvents():
             pygame.quit()
             sys.exit(0)
 
-# returns a 28x28 reprsentation of the screen pixels. The pixels are in the form of a 1d vector values [0-255]
+# returns a 28x28 representation of the screen pixels. The pixels are in the form of a 1d vector values [0-255]
 def getPixels():
     imgStr = pygame.image.tostring(screen, 'RGBA', False)
     img = Image.frombytes('RGBA', (WIDTH, HEIGHT), imgStr)
     img = ImageOps.grayscale(img)
     img.thumbnail((28, 28), Image.ANTIALIAS)
-    pixels = list(img.getdata())
-    return np.array(pixels)
+    img = ImageEnhance.Contrast(img).enhance(CONTRAST_FACTOR)
+    # img.save(f'./images/screen_{time_ns()}.jpg')
+    pixels = np.array(list(img.getdata()))
+    return pixels
 
 if __name__ == '__main__':
     main()
