@@ -32,12 +32,16 @@ def main():
     knn = getModel()
     pygame.display.set_caption('Digit Classification')
     pygame.init()
+    prev_pixels = None
+    label = None
     while True:
         screen.fill(COLOR_BLACK)
         handleEvents()
         drawCoords()
         pixels = getPixels()
-        label = knn.predict(pixels)[0]
+        if (pixels != prev_pixels).all():
+            label = knn.predict(pixels)[0]
+        prev_pixels = pixels
         print(f'Label: {label}')
         # probablities = knn.predict_proba(pixels)[0]
         # print(probablities)
@@ -54,6 +58,7 @@ def getModel():
     print('Normalizing features...')
     normalizer = StandardScaler()
     X_train = normalizer.fit_transform(X_train)
+    print(f'Max in X_train normalized: {np.max(X_train)}')
     X_test = normalizer.transform(X_test)
     print('Normalized features')
 
@@ -145,10 +150,9 @@ def getPixels():
     # img.save(f'./images/screen_{time_ns()}.png')
     pixels = np.array(list(img.getdata()))
     pixels = pixels.reshape(1, -1)
-    # print(pixels)
     pixels = StandardScaler().fit_transform(pixels.T)
     pixels = pixels.T
-    # print(pixels)
+    print(f'Max in screen pixels normalized: {np.max(pixels)}')
     return pixels
 
 if __name__ == '__main__':
