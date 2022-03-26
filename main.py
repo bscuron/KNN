@@ -12,7 +12,7 @@ from time import sleep, time_ns, time # TODO: remove these. just here for debugg
 import pandas as pd
 
 # window settings
-WIDTH, HEIGHT = 500, 500
+WIDTH, HEIGHT = 504, 504
 screen = pygame.display.set_mode([WIDTH, HEIGHT])
 
 # canvas settings
@@ -22,13 +22,11 @@ COLOR_BLACK = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
 
 # image filter settings
-CONTRAST_FACTOR = 1.1 # the factor to increase the 28x28 representation of the screen's contrast
+CONTRAST_FACTOR = 1.05 # the factor to increase the 28x28 representation of the screen's contrast
 
 # model settings
-MIN_K = 1
-MAX_K = 5
-K_RANGE = range(MIN_K, MAX_K + 1)
-CROSS_VALIDATION_FOLDS = 3
+K_RANGE = range(1, 6)
+CROSS_VALIDATION_FOLDS = 5
 
 def main():
     knn = getModel()
@@ -73,21 +71,21 @@ def getModel():
     print('Fit data')
 
     # evaluate the model on the testing set
-    # print('Computing statistics...')
-    # y_test_pred = knn.predict(X_test)
-    # acc = accuracy_score(y_test, y_test_pred)
+    print('Computing statistics...')
+    y_test_pred = knn.predict(X_test)
+    acc = accuracy_score(y_test, y_test_pred)
     # f1 = f1_score(y_test, y_test_pred, average=None)
     # recall = recall_score(y_test, y_test_pred, average=None)
     # precision = precision_score(y_test, y_test_pred, average=None)
-    # print(f'Accuracy: {acc}')
+    print(f'Accuracy: {acc}')
     # print(f'Recall: {recall}')
     # print(f'Precision: {precision}')
     # print(f'F1 score: {f1}')
     return knn
 
 def getK(features, labels):
-    features = features[:int(len(features / 10000))]
-    labels = labels[:int(len(labels / 10000))]
+    features = features[:int(len(features / 1000))]
+    labels = labels[:int(len(labels / 1000))]
     param_grid = dict(n_neighbors=K_RANGE)
     knn = KNeighborsClassifier(n_neighbors=1)
     grid = GridSearchCV(knn, param_grid, cv=CROSS_VALIDATION_FOLDS, scoring='accuracy')
@@ -145,9 +143,13 @@ def getPixels():
     img = ImageOps.grayscale(img)
     img.thumbnail((28, 28), Image.ANTIALIAS)
     img = ImageEnhance.Contrast(img).enhance(CONTRAST_FACTOR)
-    img.save(f'./images/screen_{time_ns()}.png')
+    # img.save(f'./images/screen_{time_ns()}.png')
     pixels = np.array(list(img.getdata()))
     pixels = pixels.reshape(1, -1)
+    # print(pixels)
+    pixels = StandardScaler().fit_transform(pixels.T)
+    pixels = pixels.T
+    # print(pixels)
     return pixels
 
 if __name__ == '__main__':
