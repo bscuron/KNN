@@ -30,6 +30,7 @@ CROSS_VALIDATION_FOLDS = 5
 
 def main():
     knn = getModel()
+    pygame.display.set_caption('Digit Classification')
     pygame.init()
     while True:
         screen.fill(COLOR_BLACK)
@@ -37,10 +38,9 @@ def main():
         drawCoords()
         pixels = getPixels()
         label = knn.predict(pixels)[0]
-        probablities = knn.predict_proba(pixels)[0]
-        for i, p in enumerate(probablities):
-            print(f'{i} => {p:.2f}')
         print(f'Label: {label}')
+        # probablities = knn.predict_proba(pixels)[0]
+        # print(probablities)
         pygame.display.flip()
 
 # train the KNN classification model using the MNIST dataset
@@ -48,7 +48,6 @@ def getModel():
     # load dataset split into training/validation and testing
     print('Loading dataset...')
     X_train, X_test, y_train, y_test = loadData()
-    print(f'X_train shape: {X_train.shape}')
     print('Loaded dataset')
 
     # normalize features
@@ -61,7 +60,7 @@ def getModel():
     # use cross-validation to select the optimal hyperparameter 'k'
     print('Finding optimal hyperparameter...')
     # k = getK(X_train, y_train)
-    k = 10 
+    k = 5 
     print('Found optimal hyperparameter')
 
     # fit the data to the model with the optimal hyperparameter 'k'
@@ -72,12 +71,12 @@ def getModel():
 
     # evaluate the model on the testing set
     print('Computing statistics...')
-    y_test_pred = knn.predict(X_test)
-    acc = accuracy_score(y_test, y_test_pred)
+    # y_test_pred = knn.predict(X_test)
+    # acc = accuracy_score(y_test, y_test_pred)
     # f1 = f1_score(y_test, y_test_pred, average=None)
     # recall = recall_score(y_test, y_test_pred, average=None)
     # precision = precision_score(y_test, y_test_pred, average=None)
-    print(f'Accuracy: {acc}')
+    # print(f'Accuracy: {acc}')
     # print(f'Recall: {recall}')
     # print(f'Precision: {precision}')
     # print(f'F1 score: {f1}')
@@ -104,8 +103,8 @@ def loadData():
         testingData = pd.read_csv('./test.csv')
         trainingData.to_pickle('./train_cached.pkl')
         testingData.to_pickle('./test_cached.pkl')
-    # trainingData = shuffle(trainingData)
-    # testingData = shuffle(testingData)
+    trainingData = shuffle(trainingData)
+    testingData = shuffle(testingData)
     X_train = trainingData.drop('label', axis='columns').values
     y_train = trainingData['label'].values
     X_test = testingData.drop('label', axis='columns').values
