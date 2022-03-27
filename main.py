@@ -17,13 +17,13 @@ screen = pygame.display.set_mode([WIDTH, HEIGHT])
 
 # canvas settings
 coords = [] # (x, y) coordinates of user drawing
-PEN_WIDTH = 30
+PEN_WIDTH = min(WIDTH, HEIGHT) // 25
 COLOR_BLACK = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
 
 # image filter settings
-CONTRAST_FACTOR = 1.05 # the factor to increase the 28x28 representation of the screen's contrast
-PIXEL_PADDING = min(WIDTH, HEIGHT) // 10
+CONTRAST_FACTOR = 1 # the factor to increase the 28x28 representation of the screen's contrast
+PIXEL_PADDING = min(WIDTH, HEIGHT) // 8 # when centering the drawing, this is how many pixels will be added to the top, bot, left, and right for padding
 
 # model settings
 K_RANGE = range(1, 6)
@@ -41,7 +41,7 @@ def main():
         drawCoords()
         pixels = getPixels()
         label = knn.predict(pixels)[0]
-        print(f'Label: {label}')
+        pygame.display.set_caption(str(label))
         if label != prev_label:
             say(label)
         prev_label = label
@@ -70,7 +70,7 @@ def getModel():
     # use cross-validation to select the optimal hyperparameter 'k'
     print('Finding optimal hyperparameter...')
     # k = getK(X_train, y_train)
-    k = 5 
+    k = 4
     print('Found optimal hyperparameter')
 
     # fit the data to the model with the optimal hyperparameter 'k'
@@ -80,23 +80,22 @@ def getModel():
     print('Fit data')
 
     # evaluate the model on the testing set
-    # print('Computing statistics...')
-    # y_test_pred = knn.predict(X_test)
-    # acc = accuracy_score(y_test, y_test_pred)
-    # f1 = f1_score(y_test, y_test_pred, average=None)
-    # recall = recall_score(y_test, y_test_pred, average=None)
-    # precision = precision_score(y_test, y_test_pred, average=None)
-    # print(f'Accuracy: {acc}')
-    # print(f'Recall: {recall}')
-    # print(f'Precision: {precision}')
-    # print(f'F1 score: {f1}')
+    print('Computing statistics...')
+    y_test_pred = knn.predict(X_test)
+    acc = accuracy_score(y_test, y_test_pred)
+    f1 = f1_score(y_test, y_test_pred, average=None)
+    recall = recall_score(y_test, y_test_pred, average=None)
+    precision = precision_score(y_test, y_test_pred, average=None)
+    print(f'Accuracy: {acc}')
+    print(f'Recall: {recall}')
+    print(f'Precision: {precision}')
+    print(f'F1 score: {f1}')
     return knn
 
+# perform cross-validation to find the optimal hyperparameter 'k'
 def getK(features, labels):
-    features = features[:int(len(features / 1000))]
-    labels = labels[:int(len(labels / 1000))]
     param_grid = dict(n_neighbors=K_RANGE)
-    knn = KNeighborsClassifier(n_neighbors=1)
+    knn = KNeighborsClassifier()
     grid = GridSearchCV(knn, param_grid, cv=CROSS_VALIDATION_FOLDS, scoring='accuracy')
     grid.fit(features, labels)
     print(grid.best_score_)
