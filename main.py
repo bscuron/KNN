@@ -23,6 +23,7 @@ COLOR_WHITE = (255, 255, 255)
 
 # image filter settings
 CONTRAST_FACTOR = 1.05 # the factor to increase the 28x28 representation of the screen's contrast
+PIXEL_PADDING = min(WIDTH, HEIGHT) // 10
 
 # model settings
 K_RANGE = range(1, 6)
@@ -32,20 +33,25 @@ def main():
     knn = getModel()
     pygame.display.set_caption('Digit Classification')
     pygame.init()
-    prev_pixels = None
     label = None
+    prev_label = None
     while True:
         screen.fill(COLOR_BLACK)
         handleEvents()
         drawCoords()
         pixels = getPixels()
-        if (pixels != prev_pixels).all():
-            label = knn.predict(pixels)[0]
-        prev_pixels = pixels
+        label = knn.predict(pixels)[0]
         print(f'Label: {label}')
+        if label != prev_label:
+            say(label)
+        prev_label = label
         # probablities = knn.predict_proba(pixels)[0]
         # print(probablities)
         pygame.display.flip()
+
+# say the given word as a new process in the background
+def say(word):
+    os.system(f'say "{word}" &')
 
 # train the KNN classification model using the MNIST dataset
 def getModel():
@@ -58,7 +64,6 @@ def getModel():
     print('Normalizing features...')
     normalizer = StandardScaler()
     X_train = normalizer.fit_transform(X_train)
-    print(f'Max in X_train normalized: {np.max(X_train)}')
     X_test = normalizer.transform(X_test)
     print('Normalized features')
 
@@ -75,7 +80,7 @@ def getModel():
     print('Fit data')
 
     # evaluate the model on the testing set
-    print('Computing statistics...')
+    # print('Computing statistics...')
     # y_test_pred = knn.predict(X_test)
     # acc = accuracy_score(y_test, y_test_pred)
     # f1 = f1_score(y_test, y_test_pred, average=None)
@@ -145,15 +150,24 @@ def getPixels():
     imgStr = pygame.image.tostring(screen, 'RGBA', False)
     img = Image.frombytes('RGBA', (WIDTH, HEIGHT), imgStr)
     img = ImageOps.grayscale(img)
-    img.thumbnail((28, 28), Image.ANTIALIAS)
+    img = img.crop(img.getbbox())
+    img = addPadding(img, PIXEL_PADDING, COLOR_BLACK)
+    img = img.resize((28, 28), Image.ANTIALIAS)
     img = ImageEnhance.Contrast(img).enhance(CONTRAST_FACTOR)
     # img.save(f'./images/screen_{time_ns()}.png')
     pixels = np.array(list(img.getdata()))
     pixels = pixels.reshape(1, -1)
     pixels = StandardScaler().fit_transform(pixels.T)
     pixels = pixels.T
-    print(f'Max in screen pixels normalized: {np.max(pixels)}')
     return pixels
+
+def addPadding(img, padding, color):
+    w, h = img.size
+    nw = w + 2 * padding
+    nh = h + 2 * padding
+    nimg = Image.new(img.mode, (nw, nh), color[0])
+    nimg.paste(img, (padding, padding))
+    return nimg
 
 if __name__ == '__main__':
     main()
