@@ -75,7 +75,7 @@ def getModel():
 
     # fit the data to the model with the optimal hyperparameter 'k'
     print('Fitting data...')
-    knn = KNeighborsClassifier(n_neighbors=k)
+    knn = KNeighborsClassifier(n_neighbors=k, metric='euclidean')
     knn.fit(X_train, y_train)
     print('Fit data')
 
@@ -90,6 +90,7 @@ def getModel():
     print(f'Recall: {recall}')
     print(f'Precision: {precision}')
     print(f'F1 score: {f1}')
+
     return knn
 
 # perform cross-validation to find the optimal hyperparameter 'k'
