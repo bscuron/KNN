@@ -1,7 +1,6 @@
 import pygame
 import os
 from PIL import Image, ImageOps, ImageEnhance
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score
@@ -24,6 +23,7 @@ COLOR_WHITE = (255, 255, 255)
 # image filter settings
 CONTRAST_FACTOR = 1 # the factor to increase the 28x28 representation of the screen's contrast
 PIXEL_PADDING = min(WIDTH, HEIGHT) // 8 # when centering the drawing, this is how many pixels will be added to the top, bot, left, and right for padding
+IMAGE_SIZE = 28
 
 # model settings
 K_RANGE = range(1, 6)
@@ -62,9 +62,8 @@ def getModel():
 
     # normalize features
     print('Normalizing features...')
-    normalizer = StandardScaler()
-    X_train = normalizer.fit_transform(X_train)
-    X_test = normalizer.transform(X_test)
+    X_train = X_train / np.max(X_train)
+    X_test = X_test / np.max(X_test)
     print('Normalized features')
 
     # use cross-validation to select the optimal hyperparameter 'k'
@@ -145,20 +144,21 @@ def handleEvents():
             pygame.quit()
             sys.exit(0)
 
-# returns a 28x28 representation of the screen pixels. The pixels are in the form of a 1d vector values [0-255]
+# returns the pixels of the user drawing in the shape (1, 784). The pixels are in the form of a 1d vector values [0-255]
 def getPixels():
     imgStr = pygame.image.tostring(screen, 'RGBA', False)
     img = Image.frombytes('RGBA', (WIDTH, HEIGHT), imgStr)
     img = ImageOps.grayscale(img)
     img = img.crop(img.getbbox())
     img = addPadding(img, PIXEL_PADDING, COLOR_BLACK)
-    img = img.resize((28, 28), Image.ANTIALIAS)
+    img = img.resize((IMAGE_SIZE, IMAGE_SIZE), Image.ANTIALIAS)
     img = ImageEnhance.Contrast(img).enhance(CONTRAST_FACTOR)
     # img.save(f'./images/screen_{time_ns()}.png')
     pixels = np.array(list(img.getdata()))
+    pmax = np.max(pixels)
+    if pmax != 0:
+        pixels = pixels / np.max(pixels)
     pixels = pixels.reshape(1, -1)
-    pixels = StandardScaler().fit_transform(pixels.T)
-    pixels = pixels.T
     return pixels
 
 def addPadding(img, padding, color):
