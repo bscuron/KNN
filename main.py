@@ -16,7 +16,8 @@ screen = pygame.display.set_mode([WIDTH, HEIGHT])
 
 # canvas settings
 coords = [] # (x, y) coordinates of user drawing
-PEN_WIDTH = min(WIDTH, HEIGHT) // 25
+draw = False
+PEN_WIDTH = min(WIDTH, HEIGHT) // 20
 COLOR_BLACK = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
 
@@ -78,17 +79,17 @@ def getModel():
     knn.fit(X_train, y_train)
     print('Fit data')
 
-    # evaluate the model on the testing set
-    print('Computing statistics...')
-    y_test_pred = knn.predict(X_test)
-    acc = accuracy_score(y_test, y_test_pred)
-    f1 = f1_score(y_test, y_test_pred, average=None)
-    recall = recall_score(y_test, y_test_pred, average=None)
-    precision = precision_score(y_test, y_test_pred, average=None)
-    print(f'Accuracy: {acc}')
-    print(f'Recall: {recall}')
-    print(f'Precision: {precision}')
-    print(f'F1 score: {f1}')
+    # # evaluate the model on the testing set
+    # print('Computing statistics...')
+    # y_test_pred = knn.predict(X_test)
+    # acc = accuracy_score(y_test, y_test_pred)
+    # f1 = f1_score(y_test, y_test_pred, average=None)
+    # recall = recall_score(y_test, y_test_pred, average=None)
+    # precision = precision_score(y_test, y_test_pred, average=None)
+    # print(f'Accuracy: {acc}')
+    # print(f'Recall: {recall}')
+    # print(f'Precision: {precision}')
+    # print(f'F1 score: {f1}')
 
     return knn
 
@@ -123,23 +124,26 @@ def loadData():
 
 # draw a line between adjacent points/coordinates in the `coords` list
 def drawCoords():
-    if len(coords) >= 2:
-        pygame.draw.lines(surface=screen, color=COLOR_WHITE, closed=False, points=coords, width=PEN_WIDTH)
+    for points in coords:
+        if len(points) > 1:
+            pygame.draw.lines(screen, COLOR_WHITE, False, points, PEN_WIDTH)
+            for point in points:
+                pygame.draw.circle(screen, COLOR_WHITE, point, PEN_WIDTH / 2)
 
 # handle the different pygame events (mouse events, keyboard events, quit event)
 def handleEvents():
+    global draw
     for event in pygame.event.get():
-        # if left mouse button is clicked try to append mouse coordinates to the coords list
-        if pygame.mouse.get_pressed()[0]:
-            try:
-                coords.append(event.pos)
-            except AttributeError:
-                pass
-        # clear screen on <SPACE> kepress
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                coords.clear()
-        # if window is closed by user, quit program
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            draw = True
+            if draw:
+                coords.append([event.pos])
+        elif event.type == pygame.MOUSEBUTTONUP:
+            draw = False
+        elif event.type == pygame.MOUSEMOTION and draw:
+            coords[-1].append(event.pos)
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            coords.clear()
         elif event.type == pygame.QUIT:
             pygame.quit()
             sys.exit(0)
