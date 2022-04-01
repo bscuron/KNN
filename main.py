@@ -41,13 +41,12 @@ def main():
         handleEvents()
         drawCoords()
         pixels = getPixels()
-        label = knn.predict(pixels)[0]
+        probablities = knn.predict_proba(pixels)[0]
+        label = probablities.argmax(axis=0)
         pygame.display.set_caption(str(label))
         if label != prev_label:
             say(label)
         prev_label = label
-        # probablities = knn.predict_proba(pixels)[0]
-        # print(probablities)
         pygame.display.flip()
 
 # say the given word as a new process in the background
