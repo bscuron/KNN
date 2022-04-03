@@ -9,6 +9,8 @@ import sys
 import numpy as np
 from time import sleep, time_ns, time # TODO: remove these. just here for debugging
 import pandas as pd
+from skimage import filters
+from skimage.measure import regionprops
 
 # window settings
 WIDTH, HEIGHT = 504, 504
@@ -147,22 +149,55 @@ def handleEvents():
             pygame.quit()
             sys.exit(0)
 
-# returns the pixels of the user drawing in the shape (1, 784). The pixels are in the form of a 1d vector values [0-255]
+def getCenterMass(pixels):
+    threshold = filters.threshold_otsu(pixels)
+    labeled = (pixels > threshold).astype(int)
+    properties = regionprops(labeled, pixels)
+    if len(properties) == 0:
+        return IMAGE_SIZE // 2, IMAGE_SIZE // 2
+    centerMass = properties[0].weighted_centroid
+    return centerMass
+
 def getPixels():
-    imgStr = pygame.image.tostring(screen, 'RGBA', False)
-    img = Image.frombytes('RGBA', (WIDTH, HEIGHT), imgStr)
+    img = pygame.image.tostring(screen, 'RGBA', False)
+    img = Image.frombytes('RGBA', (WIDTH, HEIGHT), img)
     img = ImageOps.grayscale(img)
     img = img.crop(img.getbbox())
     img = addPadding(img, PIXEL_PADDING, COLOR_BLACK)
     img = img.resize((IMAGE_SIZE, IMAGE_SIZE), Image.ANTIALIAS)
-    img = ImageEnhance.Contrast(img).enhance(CONTRAST_FACTOR)
-    # img.save(f'./images/screen_{time_ns()}.png')
     pixels = np.array(list(img.getdata()))
+    pixels = np.resize(pixels, (IMAGE_SIZE, IMAGE_SIZE))
+
+    # center image around center of mass
+    centerMass = getCenterMass(pixels)
+    pixels = translate(pixels, IMAGE_SIZE // 2 - int(centerMass[1]), IMAGE_SIZE // 2 - int(centerMass[0]))
+
+    # save preprocessed image
+    img = Image.fromarray(np.uint8(pixels) , 'L')
+    img.save(f'./images/screen_{time_ns()}.png')
+
+    # normalize pixels
     pmax = np.max(pixels)
     if pmax != 0:
-        pixels = pixels / np.max(pixels)
+        pixels = pixels / pmax
+
+    # reshape array to match MNIST format
     pixels = pixels.reshape(1, -1)
     return pixels
+
+# translate the given array to the new center
+def translate(arr, dx, dy):
+    arr = np.roll(arr, dy, axis=0)
+    arr = np.roll(arr, dx, axis=1)
+    if dy > 0:
+        arr[:dy, :] = 0
+    elif dy < 0:
+        arr[dy:, :] = 0
+    if dx > 0:
+        arr[:, :dx] = 0
+    elif dx < 0:
+        arr[:, dx:] = 0
+    return arr
 
 def addPadding(img, padding, color):
     w, h = img.size
