@@ -12,6 +12,9 @@ import pandas as pd
 from skimage import filters
 from skimage.measure import regionprops
 
+# program settings
+DELAY = 20 # ms
+
 # window settings
 WIDTH, HEIGHT = 504, 504
 screen = pygame.display.set_mode([WIDTH, HEIGHT])
@@ -36,21 +39,25 @@ def main():
     knn = getModel()
     pygame.display.set_caption('Digit Classification')
     pygame.init()
-    label = None
-    prevLabel = None
-    prevCoords = None
+    label, screenStr, prevLabel, prevCoords, prevScreenStr = None, None, None, None, None
     while True:
         screen.fill(COLOR_BLACK)
         handleEvents()
         drawCoords()
-        pixels = getPixels()
-        probablities = knn.predict_proba(pixels)[0]
-        label = probablities.argmax(axis=0)
-        pygame.display.set_caption(str(label))
-        if label != prevLabel:
-            say(label)
-        prevLabel = label
+        screenStr = pygame.image.tostring(screen, 'RGBA', False)
+
+        # only make new predictions if the screen has updated (for better performance)
+        if screenStr != prevScreenStr:
+            pixels = getPixels()
+            probablities = knn.predict_proba(pixels)[0]
+            label = probablities.argmax(axis=0)
+            pygame.display.set_caption(str(label))
+            if label != prevLabel:
+                say(label)
+            prevLabel = label
+            prevScreenStr = screenStr
         pygame.display.flip()
+        pygame.time.wait(DELAY)
 
 # say the given word as a new process in the background
 def say(word):
@@ -81,17 +88,17 @@ def getModel():
     knn.fit(X_train, y_train)
     print('Fit data')
 
-    # # evaluate the model on the testing set
-    # print('Computing statistics...')
-    # y_test_pred = knn.predict(X_test)
-    # acc = accuracy_score(y_test, y_test_pred)
-    # f1 = f1_score(y_test, y_test_pred, average=None)
-    # recall = recall_score(y_test, y_test_pred, average=None)
-    # precision = precision_score(y_test, y_test_pred, average=None)
-    # print(f'Accuracy: {acc}')
-    # print(f'Recall: {recall}')
-    # print(f'Precision: {precision}')
-    # print(f'F1 score: {f1}')
+    # evaluate the model on the testing set
+    print('Computing statistics...')
+    y_test_pred = knn.predict(X_test)
+    acc = accuracy_score(y_test, y_test_pred)
+    f1 = f1_score(y_test, y_test_pred, average=None)
+    recall = recall_score(y_test, y_test_pred, average=None)
+    precision = precision_score(y_test, y_test_pred, average=None)
+    print(f'Accuracy: {acc}')
+    print(f'Recall: {recall}')
+    print(f'Precision: {precision}')
+    print(f'F1 score: {f1}')
 
     return knn
 
@@ -142,6 +149,7 @@ def handleEvents():
                 coords.append([event.pos])
         elif event.type == pygame.MOUSEBUTTONUP:
             draw = False
+        elif event.type == pygame.MOUSEMOTION and draw:
             coords[-1].append(event.pos)
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
             coords.clear()
