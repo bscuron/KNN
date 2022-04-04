@@ -13,7 +13,7 @@ from skimage import filters
 from skimage.measure import regionprops
 
 # program settings
-DELAY = 10 # ms
+DELAY = 100 # ms
 
 # window settings
 WIDTH, HEIGHT = 504, 504
@@ -57,7 +57,10 @@ def main():
             prevLabel = label
             prevScreenStr = screenStr
         pygame.display.flip()
-        pygame.time.wait(DELAY)
+
+        # yield the process if not currently drawing
+        if not draw:
+            pygame.time.wait(DELAY)
 
 # say the given word as a new process in the background
 def say(word):
@@ -88,17 +91,17 @@ def getModel():
     knn.fit(X_train, y_train)
     print('Fit data')
 
-    # evaluate the model on the testing set
-    print('Computing statistics...')
-    y_test_pred = knn.predict(X_test)
-    acc = accuracy_score(y_test, y_test_pred)
-    f1 = f1_score(y_test, y_test_pred, average=None)
-    recall = recall_score(y_test, y_test_pred, average=None)
-    precision = precision_score(y_test, y_test_pred, average=None)
-    print(f'Accuracy: {acc}')
-    print(f'Recall: {recall}')
-    print(f'Precision: {precision}')
-    print(f'F1 score: {f1}')
+    # # evaluate the model on the testing set
+    # print('Computing statistics...')
+    # y_test_pred = knn.predict(X_test)
+    # acc = accuracy_score(y_test, y_test_pred)
+    # f1 = f1_score(y_test, y_test_pred, average=None)
+    # recall = recall_score(y_test, y_test_pred, average=None)
+    # precision = precision_score(y_test, y_test_pred, average=None)
+    # print(f'Accuracy: {acc}')
+    # print(f'Recall: {recall}')
+    # print(f'Precision: {precision}')
+    # print(f'F1 score: {f1}')
 
     return knn
 
