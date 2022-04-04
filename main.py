@@ -13,7 +13,7 @@ from skimage import filters
 from skimage.measure import regionprops
 
 # program settings
-DELAY = 20 # ms
+DELAY = 10 # ms
 
 # window settings
 WIDTH, HEIGHT = 504, 504
