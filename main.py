@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_sc
 from sklearn.utils import shuffle
 import sys
 import numpy as np
-from time import sleep, time_ns, time # TODO: remove these. just here for debugging
+from time import time_ns
 import pandas as pd
 from skimage import filters
 from skimage.measure import regionprops
@@ -91,17 +91,18 @@ def getModel():
     knn.fit(X_train, y_train)
     print('Fit data')
 
-    # # evaluate the model on the testing set
-    # print('Computing statistics...')
-    # y_test_pred = knn.predict(X_test)
-    # acc = accuracy_score(y_test, y_test_pred)
-    # f1 = f1_score(y_test, y_test_pred, average=None)
-    # recall = recall_score(y_test, y_test_pred, average=None)
-    # precision = precision_score(y_test, y_test_pred, average=None)
-    # print(f'Accuracy: {acc}')
-    # print(f'Recall: {recall}')
-    # print(f'Precision: {precision}')
-    # print(f'F1 score: {f1}')
+    # evaluate the model on the testing set
+    if STATS:
+        print('Computing statistics...')
+        y_test_pred = knn.predict(X_test)
+        acc = accuracy_score(y_test, y_test_pred)
+        f1 = f1_score(y_test, y_test_pred, average=None)
+        recall = recall_score(y_test, y_test_pred, average=None)
+        precision = precision_score(y_test, y_test_pred, average=None)
+        print(f'Accuracy: {acc}')
+        print(f'Recall: {recall}')
+        print(f'Precision: {precision}')
+        print(f'F1 score: {f1}')
 
     return knn
 
@@ -221,4 +222,6 @@ def addPadding(img, padding, color):
     return nimg
 
 if __name__ == '__main__':
+    global STATS
+    STATS = True if input('Compute statistics? (y/n) ') == 'y' else False
     main()
