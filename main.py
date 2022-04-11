@@ -51,8 +51,8 @@ def main():
             pixels = getPixels()
             probablities = knn.predict_proba(pixels)[0]
             label = probablities.argmax(axis=0)
-            pygame.display.set_caption(str(label))
             if label != prevLabel:
+                pygame.display.set_caption(str(label))
                 say(label)
             prevLabel = label
             prevScreenStr = screenStr
@@ -64,7 +64,8 @@ def main():
 
 # say the given word as a new process in the background
 def say(word):
-    os.system(f'say "{word}" &')
+    if SAY:
+        os.system(f'say "{word}" &')
 
 # train the KNN classification model using the MNIST dataset
 def getModel():
@@ -224,4 +225,5 @@ def addPadding(img, padding, color):
 if __name__ == '__main__':
     global STATS
     STATS = True if input('Compute statistics? (y/n) ') == 'y' else False
+    SAY = True if input('Say predicted digit? (y/n) ') == 'y' else False
     main()
