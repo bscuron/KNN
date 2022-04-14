@@ -1,4 +1,7 @@
 import pygame
+import seaborn as sns
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
 import os
 from PIL import Image, ImageOps, ImageEnhance
 from sklearn.model_selection import GridSearchCV
@@ -96,6 +99,7 @@ def getModel():
     if STATS:
         print('Computing statistics...')
         y_test_pred = knn.predict(X_test)
+        # showPCAPlot(X_test, y_test_pred)
         acc = accuracy_score(y_test, y_test_pred)
         f1 = f1_score(y_test, y_test_pred, average=None)
         recall = recall_score(y_test, y_test_pred, average=None)
@@ -106,6 +110,17 @@ def getModel():
         print(f'F1 score: {f1}')
 
     return knn
+
+# plot the testing set with the predicted labels in reduced dimensionality
+def showPCAPlot(X_test, y_test_pred):
+    pca = PCA(n_components=2)
+    X_r = pca.fit_transform(X_test)
+    X_r = np.vstack((X_r.T, y_test_pred)).T
+    X_r_df = pd.DataFrame(data=X_r, columns=("1st principal", "2nd principal", "label"))
+    sns.FacetGrid(X_r_df, hue='label', height=6).map(plt.scatter,'1st principal','2nd principal', alpha=0.25).add_legend()
+    plt.ion()
+    plt.pause(0.001)
+    plt.show()
 
 # perform cross-validation to find the optimal hyperparameter 'k'
 def getK(features, labels):
