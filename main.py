@@ -6,7 +6,7 @@ import os
 from PIL import Image, ImageOps, ImageEnhance
 from sklearn.model_selection import GridSearchCV
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score
+from sklearn.metrics import classification_report
 from sklearn.utils import shuffle
 import sys
 import numpy as np
@@ -100,15 +100,8 @@ def getModel():
         print('Computing statistics...')
         y_test_pred = knn.predict(X_test)
         # showPCAPlot(X_test, y_test_pred)
-        acc = accuracy_score(y_test, y_test_pred)
-        f1 = f1_score(y_test, y_test_pred, average=None)
-        recall = recall_score(y_test, y_test_pred, average=None)
-        precision = precision_score(y_test, y_test_pred, average=None)
-        print(f'Accuracy: {acc}')
-        print(f'Recall: {recall}')
-        print(f'Precision: {precision}')
-        print(f'F1 score: {f1}')
-
+        report = classification_report(y_test, y_test_pred)
+        print(report)
     return knn
 
 # plot the testing set with the predicted labels in reduced dimensionality
