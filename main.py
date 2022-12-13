@@ -232,6 +232,6 @@ def addPadding(img, padding, color):
 
 if __name__ == '__main__':
     global STATS
-    STATS = True if input('Compute statistics? (y/n) ') == 'y' else False
-    SAY = True if input('Say predicted digit? (y/n) ') == 'y' else False
+    STATS = input('Compute statistics? (y/n) ') == 'y'
+    SAY = input('Say predicted digit? (y/n) ') == 'y'
     main()
