@@ -1,5 +1,9 @@
 # MNIST Digit Recognition
 
+## Demo
+
+![demo](./demo.gif)
+
 ## Quickstart
 
 ```sh
