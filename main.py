@@ -194,10 +194,10 @@ def getPixels():
     pixels = translate(pixels, IMAGE_SIZE // 2 - int(centerMass[1]), IMAGE_SIZE // 2 - int(centerMass[0]))
 
     # save preprocessed image
-    if not os.path.isdir('./images/'):
-        os.makedirs('./images/')
-    img = Image.fromarray(np.uint8(pixels) , 'L')
-    img.save(f'./images/screen_{time_ns()}.png')
+    # if not os.path.isdir('./images/'):
+    #     os.makedirs('./images/')
+    # img = Image.fromarray(np.uint8(pixels) , 'L')
+    # img.save(f'./images/screen_{time_ns()}.png')
 
     # normalize pixels
     pmax = np.max(pixels)
